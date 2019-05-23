@@ -1,0 +1,23 @@
+{
+  "name": "comp-2068",
+  "version": "1.0.0",
+  "description": "This is a blogging platform",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/d2roth/comp-2068.git"
+  },
+  "author": "Daniel Roth",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/d2roth/comp-2068/issues"
+  },
+  "homepage": "https://github.com/d2roth/comp-2068#readme",
+  "dependencies": {
+    "express": "^4.17.0"
+  }
+}
