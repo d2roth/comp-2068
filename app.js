@@ -17,6 +17,29 @@ const path = require( 'path' );
 
 const app = express();
 
+//
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const flash = require('connect-flash');
+
+app.use(cookieParser());
+app.use(session({
+  secret: (process.env.secret || 'crave-mistreat-pebble-forage'),
+  cookie: {
+    maxAge: 10800000
+  },
+  resave: true,
+}));
+
+app.use(flash());
+app.use((req, res, next) => {
+  res.locals.flash = res.locals.flash || {};
+  res.locals.flash.success = req.flash('success') || null;
+  res.locals.flash.error = req.flash('error') || null;
+
+  next();
+})
+
 // Body Parser
 const bodyParser = require( 'body-parser' );
 app.use( bodyParser.json() );
@@ -31,6 +54,24 @@ app.set( 'view engine', 'pug' );
 app.use( '/css', express.static('assets/stylesheets') );
 app.use( '/js', express.static('assets/javascripts') );
 app.use( '/images', express.static('assets/images') );
+
+//Authentication Helpers
+const isAuthenticated = (req) => {
+  return req.session && req.session.userId;
+}
+
+app.use( (req, res, next) => {
+  req.isAuthenticated = () => {
+    if(!isAuthenticated(req) ){
+      req.flash('error', 'You are not permitted to do this action.');
+      res.redirect( '/' );
+    }
+  }
+
+  res.locals.isAuthenticated = isAuthenticated(req);
+  next();
+})
+
 
 // Our Routes
 const routes = require( './routes.js' );
