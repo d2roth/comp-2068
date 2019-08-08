@@ -1,10 +1,5 @@
 const Author = require('../models/author');
-
-exports.login = (req, res) => {
-  res.render('sessions/login', {
-    title: 'Login'
-  });
-};
+const jwt = require('jsonwebtoken');
 
 exports.authenticate = (req, res) => {
   Author.findOne({
@@ -14,24 +9,25 @@ exports.authenticate = (req, res) => {
     author.authenticate( req.body.password, (err, isMatch) =>{
       if( err) throw new Error(err);
 
-      if( isMatch){
+      if( isMatch ){
         req.session.userId = author.id;
-        req.flash('success', 'You are now logged in!');
-        res.redirect('/blogs');
+        const token = jwt.sign({ payload: req.body.email }, 'shaunthebulider', { expiresIn: '1h' } );
+        res.cookie( 'token', token, {httpOnly: true} ).status(201).send({success: 'You were perfectly authenticated!'});
       } else {
-        req.flash('error', 'You\'r credentials do not match. Try again!');
+        res.status(401).json(err);
         res.redirect('/login');
       }
     })
   })
   .catch( err => {
-    req.flash('error', `ERROR: ${err}`);
-    res.redirect('/login');
+    res.status(401).json(err);
   })
 };
 
 exports.logout = (req, res) => {
+  if( !req.isAuthenticated() )
+    res.status(401).send({ error: 'Could not authenticate!' } );
+
   req.session.userId = null;
-  req.flash('success', 'You have logged out now!');
-  res.redirect('/');
+  res.clearCookie('token').status(200).send( { success: 'You are now logged out!' } );
 };

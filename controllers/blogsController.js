@@ -1,148 +1,67 @@
 const Blog = require( '../models/blog' );
 
 exports.index = (req, res) => {
-  req.isAuthenticated();
-  Blog.find({
-    author: req.session.userId
-  })
+  Blog.find()
+  .published()
   .populate('author')
-    .then( blogs => {
-      res.render('blogs/index', {
-        blogs: blogs,
-        title: 'Blog Archive'
-      })
-    })
-    .catch(err => {
-      req.flash('error', `ERROR: ${err}`);
-      req.redirect('/');
-    });
+    .then( blogs => res.json(blogs) )
+    .catch( err => res.status(404).send(err) );
 };
 
-exports.drafts = (req, res) => {
-  req.isAuthenticated();
-  Blog.find({
-    author: req.session.userId
-  }).drafts()
-  .populate('author')
-    .then( blogs => {
-      res.render('blogs/index', {
-        blogs: blogs,
-        title: 'Blog Archive'
-      })
-    })
-    .catch(err => {
-      req.flash('error', `ERROR: ${err}`);
-      req.redirect('/');
-    });
-};
-
-exports.published = (req, res) => {
-  req.isAuthenticated();
-  Blog.find({
-    author: req.session.userId
-  }).published()
-  .populate('author')
-    .then( blogs => {
-      res.render('blogs/index', {
-        blogs: blogs,
-        title: 'Blog Archive'
-      })
-    })
-    .catch(err => {
-      req.flash('error', `ERROR: ${err}`);
-      req.redirect('/');
-    });
-};
-
-exports.show = (req, res) => {
-  req.isAuthenticated();
+exports.show = (req, res) => {  
   Blog.findOne({
-    _id: req.params.id,
-    author: req.session.userId
+    _id: req.params.id
   })
-  .then( (blog) => {
-    res.render( 'blogs/show', {
-      blog: blog,
-      title: blog.title
-    })
-  })
-  .catch(err => {
-      req.flash('error', `ERROR: ${err}`);
-      req.redirect('/');
-  });
-};
-
-exports.new = (req, res) => {
-  req.isAuthenticated();
-  res.render( 'blogs/new', {
-    title: 'New Blog Post'
-  } );
-};
-
-exports.edit = (req, res) => {
-  req.isAuthenticated();
-  Blog.findOne({
-    _id: req.params.id,
-    author: req.session.userId
-  })
-  .then( (blog) => {
-    res.render( 'blogs/edit', {
-      blog: blog,
-      title: blog.title
-    })
-  })
-  .catch(err => {
-      req.flash('error', `ERROR: ${err}`);
-      req.redirect('/');
-  });
+  .published()
+    .then( (blog) => res.json(blog) )
+    .catch( err => res.status(404).send(err) );
 };
 
 exports.create = (req, res) => {
-  req.isAuthenticated();
-
+  if( !req.isAuthenticated())
+    return res.status(401).send({'error':'You need to sign in.'});
+  
   req.body.blog.author = req.session.userId;
   // This is our form post object. The POST data is an object and has our desired keys.
   Blog.create( req.body.blog )
-    .then(() => {
-      req.flash('success', `Post successfully created!`);
-      res.redirect( `/arcadeGames` );
-    })
-    .catch(err => {
-      req.flash('error', `ERROR: ${err}`);
-      req.redirect('/arcadeGames/new');
-    });
+    .then( (blog) => res.json(blog) )
+    .catch( err => res.status(400).send(err) );
+};
+
+exports.edit = (req, res) => {
+  if( !req.isAuthenticated())
+    return res.status(401).send({'error':'You need to sign in.'});
+  
+  Blog.findOne({
+    _id: req.params.id,
+    author: req.session.userId
+  })
+    .then( (blog) => res.status(201).send( {'success': 'The blog post was successfully created'} ) )
+    .catch( err => res.status(404).send(err) );
 };
 
 exports.update = (req, res) => {
-  req.isAuthenticated();
+  if( !req.isAuthenticated())
+    return res.status(401).send({'error':'You need to sign in.'});
+  
   Blog.updateOne({
     _id: req.body.id,
     author: req.session.userId
   }, req.body.blog, {
     runValidators: true
   } )
-  .then(() => {
-    req.flash('success', `Post successfully updated!`);
-    res.redirect( `/blogs/${req.body.id}` );
-  })
-  .catch(err => {
-    req.flash('error', `ERROR: ${err}`);
-    res.redirect( `/blogs/${req.body.id}/edit` );
-  });
+    .then( (blog) => res.status(201).send( {'success': 'The blog post was successfully updated.'} ) )
+    .catch( err => res.status(400).send(err) );
 };
 
 exports.destroy = (req, res) => {
-  req.isAuthenticated();
+  if( !req.isAuthenticated())
+    return res.status(401).send({'error':'You need to sign in.'});
+  
   Blog.deleteOne({
     _id: req.body.id,
     author: req.session.userId
   })
-  .then(() => {
-    req.flash('success', `Post successfully deleted!`);
-    res.redirect( `/blogs` );
-  })
-  .catch(err => {
-    req.flash('error', `ERROR: ${err}`);
-    res.redirect( `/blogs` );
-  });
+    .then( (blog) => res.status(201).send( {'success': 'The blog post was successfully destroyed.'} ) )
+    .catch( err => res.status(400).send(err) );
 };
